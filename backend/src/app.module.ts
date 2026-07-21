@@ -1,17 +1,23 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
-    TypeOrmModule.forRoot({
-  type: 'better-sqlite3',
-  database: 'devflow.db',
-  autoLoadEntities: true,
-  synchronize: true,
+    TypeOrmModule.forRootAsync({
+  imports: [ConfigModule],
+  useFactory: (configService: ConfigService) => ({
+    type: 'postgres',
+    url: configService.get('DATABASE_URL'),
+    autoLoadEntities: true,
+    synchronize: true,
+    retryAttempts: 10,
+    retryDelay: 3000,
+  }),
+  inject: [ConfigService],
 }),
     AuthModule,
     UsersModule,

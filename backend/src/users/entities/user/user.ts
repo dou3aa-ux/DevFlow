@@ -1,4 +1,5 @@
 import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
+import { UserRole } from '../../../auth/enums/role.enum';   // adjust path if needed
 
 @Entity('users')
 export class User {
@@ -14,12 +15,12 @@ export class User {
     @Column()
     password!: string;
 
-    @Column({ default: 'DEVELOPER' })
-    role!: string;
+    @Column({ type: 'enum', enum: UserRole, default: UserRole.DEVELOPER })
+    role!: UserRole;
 
     @Column({ default: true })
     isActive!: boolean;
 
-    @Column({ default: () => 'CURRENT_TIMESTAMP' })
+    @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
     createdAt!: Date;
 }
