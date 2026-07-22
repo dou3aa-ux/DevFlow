@@ -1,6 +1,6 @@
-import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
-import { UserRole } from '../../../auth/enums/role.enum';   // adjust path if needed
-
+import { UserRole } from '../../../auth/enums/role.enum';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToMany } from 'typeorm';
+import { Project } from '../../../projects/entities/project/project';
 @Entity('users')
 export class User {
     @PrimaryGeneratedColumn()
@@ -23,4 +23,7 @@ export class User {
 
     @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
     createdAt!: Date;
+
+    @ManyToMany(() => Project, (project) => project.members)
+    projects!: Project[];
 }
