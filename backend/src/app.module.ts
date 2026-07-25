@@ -6,6 +6,8 @@ import { UsersModule } from './users/users.module';
 import { ProjectsModule } from './projects/projects.module';
 import { SprintsModule } from './sprints/sprints.module';
 import { TasksModule } from './tasks/tasks.module';
+import { CommentsModule } from './comments/comments.module';
+import { BugsModule } from './bugs/bugs.module';
 
 
 @Module({
@@ -28,6 +30,8 @@ import { TasksModule } from './tasks/tasks.module';
     ProjectsModule,
     SprintsModule,
     TasksModule,
+    CommentsModule,
+    BugsModule,
   ],
   controllers: [],
   providers: [],
