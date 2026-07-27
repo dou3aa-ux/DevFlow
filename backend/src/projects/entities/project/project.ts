@@ -1,5 +1,6 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToMany, JoinTable, CreateDateColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToMany, JoinTable, CreateDateColumn,OneToOne } from 'typeorm';
 import { User } from '../../../users/entities/user/user';
+import { Repository } from '../../../repositories/entities/repository.entity';
 
 export enum ProjectStatus {
     PLANNING = 'PLANNING',
@@ -29,4 +30,7 @@ export class Project {
 
     @CreateDateColumn({ type: 'timestamp' })
     createdAt!: Date;
+
+    @OneToOne(() => Repository, (repo) => repo.project)
+    repository!: Repository;
 }

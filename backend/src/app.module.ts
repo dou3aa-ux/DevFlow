@@ -8,6 +8,9 @@ import { SprintsModule } from './sprints/sprints.module';
 import { TasksModule } from './tasks/tasks.module';
 import { CommentsModule } from './comments/comments.module';
 import { BugsModule } from './bugs/bugs.module';
+import { RepositoriesModule } from './repositories/repositories.module';
+import { WebhooksModule } from './webhooks/webhooks.module';
+import { BuildsModule } from './builds/builds.module';
 
 
 @Module({
@@ -32,6 +35,9 @@ import { BugsModule } from './bugs/bugs.module';
     TasksModule,
     CommentsModule,
     BugsModule,
+    RepositoriesModule,
+    WebhooksModule,
+    BuildsModule,
   ],
   controllers: [],
   providers: [],
