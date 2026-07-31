@@ -11,6 +11,9 @@ import { BugsModule } from './bugs/bugs.module';
 import { RepositoriesModule } from './repositories/repositories.module';
 import { WebhooksModule } from './webhooks/webhooks.module';
 import { BuildsModule } from './builds/builds.module';
+import { StorageModule } from './storage/storage.module';
+import { ArtifactsModule } from './artifacts/artifacts.module';
+import { DeploymentsModule } from './deployments/deployments.module';
 
 
 @Module({
@@ -38,6 +41,9 @@ import { BuildsModule } from './builds/builds.module';
     RepositoriesModule,
     WebhooksModule,
     BuildsModule,
+    StorageModule,
+    ArtifactsModule,
+    DeploymentsModule,
   ],
   controllers: [],
   providers: [],

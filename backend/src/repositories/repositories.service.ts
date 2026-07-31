@@ -58,4 +58,10 @@ export class RepositoriesService {
     const commit = this.commitsRepository.create({ sha, message, author, committedAt, repository });
     return this.commitsRepository.save(commit);
   }
+
+  async remove(id: number): Promise<{ message: string }> {
+  const repo = await this.findOne(id);
+  await this.reposRepository.delete(repo.id);
+  return { message: 'Repository unlinked successfully' };
+}
 }

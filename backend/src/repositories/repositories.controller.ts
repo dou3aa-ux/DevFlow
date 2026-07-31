@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, UseGuards, Query } from '@nestjs/common';
+import { Controller, Get,Delete, Post, Body, Param, UseGuards, Query } from '@nestjs/common';
 import { RepositoriesService } from './repositories.service';
 import { CreateRepositoryDto } from './dto/create-repository.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth/jwt-auth.guard';
@@ -22,4 +22,9 @@ export class RepositoriesController {
   getCommits(@Param('id') id: string) {
     return this.repositoriesService.getCommits(+id);
   }
+
+  @Delete(':id')
+  remove(@Param('id') id: string) {
+  return this.repositoriesService.remove(+id);
+}
 }

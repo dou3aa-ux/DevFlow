@@ -7,6 +7,8 @@ import * as os from 'os';
 import * as path from 'path';
 import { Build, BuildStatus } from './entities/build.entity';
 import { Repository } from '../repositories/entities/repository.entity';
+import { ArtifactsService } from '../artifacts/artifacts.service';
+import { ArtifactType } from '../artifacts/entities/artifact.entity';
 
 @Injectable()
 export class BuildsService {
@@ -17,6 +19,7 @@ export class BuildsService {
     private buildsRepository: TypeOrmRepository<Build>,
     @InjectRepository(Repository)
     private reposRepository: TypeOrmRepository<Repository>,
+    private artifactsService: ArtifactsService,
   ) {}
 
   // Called by the webhook (or manually) — creates the Build record and kicks off the real work in the background
@@ -61,8 +64,22 @@ export class BuildsService {
 
       // 3. Build the Docker image
       const imageTag = `devflow-build-${buildId}`;
+      const buildContext = path.join(workDir, 'backend'); // Dockerfile lives inside backend/
       appendLog(`\n=== Building Docker image: ${imageTag} ===\n`);
-      await this.runCommand('docker', ['build', '-t', imageTag, '.'], appendLog, workDir);
+      await this.runCommand('docker', ['build', '-t', imageTag, '.'], appendLog, buildContext);
+
+      // 4. Export the image to a tar file
+      const tarPath = path.join(os.tmpdir(), `devflow-build-${buildId}.tar`);
+      appendLog(`\n=== Exporting image to tar ===\n`);
+      await this.runCommand('docker', ['save', '-o', tarPath, imageTag], appendLog);
+
+      // 5. Upload the tar to MinIO and record it as an Artifact
+      appendLog(`\n=== Uploading artifact to storage ===\n`);
+      const build = await this.buildsRepository.findOne({ where: { id: buildId } });
+      if (build) {
+        await this.artifactsService.saveArtifact(build, ArtifactType.DOCKER_IMAGE, imageTag, tarPath);
+      }
+      fs.rm(tarPath, () => {}); // clean up the local tar file after upload
 
       appendLog(`\n=== Build ${buildId} SUCCESS ===\n`);
       await this.finish(buildId, BuildStatus.SUCCESS, logs);
@@ -78,8 +95,7 @@ export class BuildsService {
   // Runs a shell command and streams its output into the log buffer
   private runCommand(command: string, args: string[], onLog: (chunk: string) => void, cwd?: string): Promise<void> {
     return new Promise((resolve, reject) => {
-      const child = spawn(command, args, { cwd });
-
+      const child = spawn(command, args, { cwd, shell: true });
       child.stdout.on('data', (data) => onLog(data.toString()));
       child.stderr.on('data', (data) => onLog(data.toString()));
 

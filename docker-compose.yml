@@ -1,4 +1,3 @@
-
 services:
   postgres:
     image: postgres:16
@@ -9,9 +8,24 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: password
     ports:
-    - "5678:5432"
+      - "5678:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
+  minio:
+    image: minio/minio
+    container_name: devflow-minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - devflow_miniodata:/data
+
 volumes:
   postgres_data:
+  devflow_miniodata:
