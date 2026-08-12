@@ -14,7 +14,7 @@ export default function Login() {
         setError('');
         try {
         await login(email, password);
-        navigate('/dashboard');
+        navigate('/projects');
         } catch {
         setError('Invalid email or password');
         }
