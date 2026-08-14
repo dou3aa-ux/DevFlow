@@ -57,11 +57,26 @@ export class DeploymentsService {
       await this.runCommand('docker', ['rm', '-f', containerName]).catch(() => {});
 
       // Run the image, mapping the container's port 3000 to a unique host port
+     // await this.runCommand('docker', [
+       // 'run', '-d',
+       // '--name', containerName,
+       // '-p', `${port}:3000`,
+        //imageTag,
+      //]);
+
       await this.runCommand('docker', [
-        'run', '-d',
-        '--name', containerName,
-        '-p', `${port}:3000`,
-        imageTag,
+      'run', '-d',
+      '--name', containerName,
+      '-p', `${port}:3000`,
+      '-e', `JWT_SECRET=${process.env.JWT_SECRET}`,
+      '-e', `JWT_EXPIRES_IN=${process.env.JWT_EXPIRES_IN}`,
+      '-e', `DATABASE_URL=postgresql://postgres:password@host.docker.internal:5678/devflow_db`,
+      '-e', `MINIO_ENDPOINT=host.docker.internal`,
+      '-e', `MINIO_PORT=9000`,
+      '-e', `MINIO_ACCESS_KEY=minioadmin`,
+      '-e', `MINIO_SECRET_KEY=minioadmin`,
+      '-e', `MINIO_BUCKET=devflow-artifacts`,
+      imageTag,
       ]);
 
       await this.deploymentsRepository.update(deploymentId, { status: DeploymentStatus.SUCCESS });
