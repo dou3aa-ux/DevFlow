@@ -14,6 +14,8 @@ import { BuildsModule } from './builds/builds.module';
 import { StorageModule } from './storage/storage.module';
 import { ArtifactsModule } from './artifacts/artifacts.module';
 import { DeploymentsModule } from './deployments/deployments.module';
+import { InfrastructureModule } from './infrastructure/infrastructure.module';
+
 
 
 @Module({
@@ -44,6 +46,7 @@ import { DeploymentsModule } from './deployments/deployments.module';
     StorageModule,
     ArtifactsModule,
     DeploymentsModule,
+    InfrastructureModule,
   ],
   controllers: [],
   providers: [],

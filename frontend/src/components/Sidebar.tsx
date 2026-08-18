@@ -3,10 +3,9 @@ import { LayoutDashboard, Kanban, Rocket, Server, Users, Settings } from 'lucide
 
 const NAV_ITEMS = [
   { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
-  { label: 'Kanban', icon: Kanban, path: '/projects' },
+  { label: 'Kanban', icon: Kanban, path: '/kanban' },
   { label: 'CI/CD', icon: Rocket, path: '/cicd' },
   { label: 'Infrastructure', icon: Server, path: '/infrastructure' },
-  { label: 'Stakeholder Review', icon: Users, path: '/stakeholders' },
 ];
 
 export default function Sidebar() {
