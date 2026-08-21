@@ -26,12 +26,12 @@ function App() {
           <Route path="/infrastructure" element={<ProtectedRoute><InfrastructurePage /></ProtectedRoute>} />
           <Route path="/login" element={<Login />} />
           <Route
-            path="/dashboard"
-            element={
-              <ProtectedRoute>
-                <Dashboard />
-              </ProtectedRoute>
-            }
+          path="/dashboard"
+          element={
+            <ProtectedRoute allowedRoles={['PROJECT_MANAGER', 'DEVELOPER', 'QA_TESTER']}>
+              <Dashboard />
+            </ProtectedRoute>
+          }
           />
           <Route
             path="/projects"
@@ -50,6 +50,9 @@ function App() {
             }
           />
           <Route path="*" element={<Navigate to="/login" replace />} />
+          <Route path="/admin/users" element={<ProtectedRoute allowedRoles={['ADMINISTRATOR']}><div className="text-white p-8">User Management — coming next</div></ProtectedRoute>} />
+          <Route path="/admin/roles" element={<ProtectedRoute allowedRoles={['ADMINISTRATOR']}><div className="text-white p-8">Role Assignment — coming next</div></ProtectedRoute>} />
+          <Route path="/stakeholder-review" element={<ProtectedRoute><div className="text-white p-8">Stakeholder Review — coming next</div></ProtectedRoute>} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>

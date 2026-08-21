@@ -10,7 +10,7 @@ interface User {
 
 interface AuthContextType {
     user: User | null;
-    login: (email: string, password: string) => Promise<void>;
+    login: (email: string, password: string) => Promise<{ user: User; accessToken: string }>;
     logout: () => void;
 }
 
@@ -27,6 +27,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.setItem('devflow_token', res.data.accessToken);
     localStorage.setItem('devflow_user', JSON.stringify(res.data.user));
     setUser(res.data.user);
+    return res.data;
     };
 
     const logout = () => {

@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { getHomeForRole } from '../lib/roleHome';
+
 
 export default function Login() {
     const [email, setEmail] = useState('');
@@ -14,7 +16,8 @@ export default function Login() {
         setError('');
         try {
         await login(email, password);
-        navigate('/dashboard');
+        const res = await login(email, password);
+        navigate(getHomeForRole(res.user.role));
         } catch {
         setError('Invalid email or password');
         }
