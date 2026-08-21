@@ -19,6 +19,24 @@ export class ProjectsController {
     return this.projectsService.findAll(userId);
     }
 
+    @Get('admin/all')
+    @UseGuards(JwtAuthGuard, RolesGuard)  // if you want admin-only
+    @Roles(UserRole.ADMINISTRATOR)       // import Roles + UserRole
+    findAllAdmin() {
+    return this.projectsService.findAllAdmin();
+    }
+
+    @Delete(':id/members/:userId')
+    removeMember(@Param('id') id: string, @Param('userId') userId: string) {
+    return this.projectsService.removeMember(+id, +userId);
+    }
+
+    async removeMember(projectId: number, userId: number): Promise<Project> {
+    const project = await this.findOne(projectId);
+    project.members = (project.members ?? []).filter((m) => m.id !== userId);
+    return this.projectsRepository.save(project);
+    }
+
     @Get(':id')
     findOne(@Param('id') id: string) {
     return this.projectsService.findOne(+id);
@@ -38,4 +56,5 @@ export class ProjectsController {
     addMember(@Param('id') id: string, @Body('userId') userId: number) {
     return this.projectsService.addMember(+id, userId);
     }
+
 }

@@ -15,7 +15,6 @@ export default function Login() {
         e.preventDefault();
         setError('');
         try {
-        await login(email, password);
         const res = await login(email, password);
         navigate(getHomeForRole(res.user.role));
         } catch {

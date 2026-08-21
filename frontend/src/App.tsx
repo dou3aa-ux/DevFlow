@@ -8,6 +8,8 @@ import ProjectBoard from './pages/ProjectBoard';
 import CiCdPage from './pages/CiCdPage';
 import InfrastructurePage from './pages/InfrastructurePage';
 import KanbanPage from './pages/KanbanPage';
+import UserManagement from './pages/UserManagement';
+import CreateProjectGroup from './pages/CreateProjectGroup';
 
 function App() {
   return (
@@ -49,10 +51,34 @@ function App() {
               </ProtectedRoute>
             }
           />
+          <Route
+          path="/admin/users"
+          element={
+            <ProtectedRoute allowedRoles={['ADMINISTRATOR']}>
+              <UserManagement />
+            </ProtectedRoute>
+          }
+          />
+          <Route
+          path="/admin/roles"
+          element={
+          <ProtectedRoute allowedRoles={['ADMINISTRATOR']}>
+            <div className="min-h-screen bg-[#050508] text-white p-8">
+              Role Assignment — coming next
+            </div>
+          </ProtectedRoute>
+          }
+          />
+          <Route
+          path="/admin/teams"
+          element={
+          <ProtectedRoute allowedRoles={['ADMINISTRATOR']}>
+          <CreateProjectGroup />
+          </ProtectedRoute>
+          }
+          />
+
           <Route path="*" element={<Navigate to="/login" replace />} />
-          <Route path="/admin/users" element={<ProtectedRoute allowedRoles={['ADMINISTRATOR']}><div className="text-white p-8">User Management — coming next</div></ProtectedRoute>} />
-          <Route path="/admin/roles" element={<ProtectedRoute allowedRoles={['ADMINISTRATOR']}><div className="text-white p-8">Role Assignment — coming next</div></ProtectedRoute>} />
-          <Route path="/stakeholder-review" element={<ProtectedRoute><div className="text-white p-8">Stakeholder Review — coming next</div></ProtectedRoute>} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>

@@ -13,20 +13,28 @@ export class ProjectsService {
     private usersRepository: Repository<User>,
     ) {}
 
-    async create(createProjectDto: any, userId: number): Promise<Project> {
+    async create(
+    createProjectDto: { name: string; description?: string; memberIds?: number[] },
+    userId: number,
+    ): Promise<Project> {
     const project = this.projectsRepository.create({
-        ...createProjectDto,
+    name: createProjectDto.name,
+    description: createProjectDto.description,
     } as Project);
 
-    const savedProject = await this.projectsRepository.save(project);
+    const saved = await this.projectsRepository.save(project);
 
-    const creator = await this.usersRepository.findOne({ where: { id: userId } });
-    if (creator) {
-        savedProject.members = [creator];
-        await this.projectsRepository.save(savedProject);
+    const memberIds = new Set<number>([userId, ...(createProjectDto.memberIds ?? [])]);
+    const members = await this.usersRepository.findByIds([...memberIds]);
+
+    saved.members = members;
+    return this.projectsRepository.save(saved);
     }
-
-    return savedProject;
+    async findAllAdmin(): Promise<Project[]> {
+    return this.projectsRepository.find({
+    relations: { members: true },
+    order: { createdAt: 'DESC' },
+    });
     }
 
     async findAll(userId: number): Promise<Project[]> {

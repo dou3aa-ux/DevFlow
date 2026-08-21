@@ -29,6 +29,7 @@ const ADMIN_NAV: NavItem[] = [
   { label: 'Role Assignment', icon: ShieldCheck, path: '/admin/roles' },
   { label: 'Workspace Security', icon: Lock, path: '/admin/security' },
   { label: 'System Logs', icon: FileClock, path: '/admin/logs' },
+  { label: 'Teams', icon: Users, path: '/admin/teams' },
 ];
 
 const STAKEHOLDER_NAV: NavItem[] = [
