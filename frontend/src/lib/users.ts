@@ -26,8 +26,8 @@ export interface AdminCreateUserPayload {
 export const usersApi = {
     getAll: () => api.get<AdminUser[]>('/users').then((r) => r.data),
 
-    create: (payload: AdminCreateUserPayload) =>
-    api.post<AdminUser>('/users', payload).then((r) => r.data),
+    create: (payload: { username: string; email: string; role: UserRole }) =>
+    api.post<{ user: AdminUser; tempPassword: string }>('/users', payload).then((r) => r.data),
 
     updateRole: (id: number, role: UserRole) =>
     api.patch<AdminUser>(`/users/${id}/role`, { role }).then((r) => r.data),

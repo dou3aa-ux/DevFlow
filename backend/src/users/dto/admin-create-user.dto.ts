@@ -1,4 +1,4 @@
-import { IsEmail, IsString, IsEnum, MinLength, MaxLength } from 'class-validator';
+import { IsEmail, IsString, IsEnum, IsOptional, MinLength, MaxLength } from 'class-validator';
 import { UserRole } from '../../auth/enums/role.enum';
 
 export class AdminCreateUserDto {
@@ -10,9 +10,10 @@ export class AdminCreateUserDto {
     @IsEmail()
     email!: string;
 
+    @IsOptional()
     @IsString()
     @MinLength(8)
-    password!: string;
+    password?: string; // if omitted, the backend generates one automatically
 
     @IsEnum(UserRole)
     role!: UserRole;

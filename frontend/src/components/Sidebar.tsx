@@ -27,9 +27,10 @@ const TEAM_NAV: NavItem[] = [
 const ADMIN_NAV: NavItem[] = [
   { label: 'User Management', icon: UserCog, path: '/admin/users' },
   { label: 'Role Assignment', icon: ShieldCheck, path: '/admin/roles' },
+  { label: 'Teams', icon: Users, path: '/admin/teams' },
+  { label: 'Kanban', icon: Kanban, path: '/kanban' },
   { label: 'Workspace Security', icon: Lock, path: '/admin/security' },
   { label: 'System Logs', icon: FileClock, path: '/admin/logs' },
-  { label: 'Teams', icon: Users, path: '/admin/teams' },
 ];
 
 const STAKEHOLDER_NAV: NavItem[] = [

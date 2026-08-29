@@ -5,62 +5,71 @@ import * as bcrypt from 'bcrypt';
 import { User } from './entities/user/user';
 import { UserRole } from '../auth/enums/role.enum';
 import { AdminCreateUserDto } from './dto/admin-create-user.dto';
+import { generateTempPassword } from './utils/generate-temp-password';
 
 @Injectable()
 export class UsersService {
-    constructor(
+  constructor(
     @InjectRepository(User)
     private readonly usersRepo: Repository<User>,
-    ) {}
+  ) {}
 
-    async findByEmail(email: string): Promise<User | null> {
+  async findByEmail(email: string): Promise<User | null> {
     return this.usersRepo.findOne({ where: { email } });
-    }
+  }
 
-    async findById(id: number): Promise<User> {
+  async findById(id: number): Promise<User> {
     const user = await this.usersRepo.findOne({ where: { id } });
     if (!user) throw new NotFoundException(`User ${id} not found`);
     return user;
-    }
+  }
 
-    async create(data: { username: string; email: string; password: string }): Promise<User> {
+  async create(data: { username: string; email: string; password: string }): Promise<User> {
     const existing = await this.findByEmail(data.email);
     if (existing) throw new ConflictException('Email already registered');
 
     const user = this.usersRepo.create(data);
     return this.usersRepo.save(user);
-    }
+  }
 
   // --- Admin-only methods below ---
 
-    async findAll(): Promise<User[]> {
+  async findAll(): Promise<User[]> {
     return this.usersRepo.find({ order: { createdAt: 'DESC' } });
-    }
+  }
 
-    async adminCreate(dto: AdminCreateUserDto): Promise<User> {
+  // Returns both the created user AND the plain temp password —
+  // this is the ONLY moment the plain password is ever available.
+  // The frontend must show it once and never fetch it again (it isn't stored anywhere in plain text).
+  async adminCreate(dto: AdminCreateUserDto): Promise<{ user: Omit<User, 'password'>; tempPassword: string }> {
     const existing = await this.findByEmail(dto.email);
     if (existing) throw new ConflictException('Email already registered');
 
-    const hashedPassword = await bcrypt.hash(dto.password, 10);
-    const user = this.usersRepo.create({
-        username: dto.username,
-        email: dto.email,
-        password: hashedPassword,
-        role: dto.role,
-        isActive: true,
-    });
-    return this.usersRepo.save(user);
-    }
+    const plainPassword = dto.password ?? generateTempPassword();
+    const hashedPassword = await bcrypt.hash(plainPassword, 10);
 
-    async updateRole(id: number, role: UserRole): Promise<User> {
+    const user = this.usersRepo.create({
+      username: dto.username,
+      email: dto.email,
+      password: hashedPassword,
+      role: dto.role,
+      isActive: true,
+    });
+    const saved = await this.usersRepo.save(user);
+
+    const { password, ...userWithoutPassword } = saved;
+    return { user: userWithoutPassword, tempPassword: plainPassword };
+  }
+
+  async updateRole(id: number, role: UserRole): Promise<User> {
     const user = await this.findById(id);
     user.role = role;
     return this.usersRepo.save(user);
-    }
+  }
 
-    async updateStatus(id: number, isActive: boolean): Promise<User> {
+  async updateStatus(id: number, isActive: boolean): Promise<User> {
     const user = await this.findById(id);
     user.isActive = isActive;
     return this.usersRepo.save(user);
-    }
+  }
 }

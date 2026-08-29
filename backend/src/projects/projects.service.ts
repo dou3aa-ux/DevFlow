@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, In } from 'typeorm';
 import { Project } from './entities/project/project';
 import { User } from '../users/entities/user/user';
 
@@ -18,22 +18,25 @@ export class ProjectsService {
     userId: number,
     ): Promise<Project> {
     const project = this.projectsRepository.create({
-    name: createProjectDto.name,
-    description: createProjectDto.description,
+        name: createProjectDto.name,
+        description: createProjectDto.description,
     } as Project);
 
     const saved = await this.projectsRepository.save(project);
 
     const memberIds = new Set<number>([userId, ...(createProjectDto.memberIds ?? [])]);
-    const members = await this.usersRepository.findByIds([...memberIds]);
+    const members = await this.usersRepository.find({
+        where: { id: In([...memberIds]) },
+    });
 
     saved.members = members;
     return this.projectsRepository.save(saved);
     }
+
     async findAllAdmin(): Promise<Project[]> {
     return this.projectsRepository.find({
-    relations: { members: true },
-    order: { createdAt: 'DESC' },
+        relations: { members: true },
+        order: { createdAt: 'DESC' },
     });
     }
 
@@ -60,15 +63,15 @@ export class ProjectsService {
     }
 
     async update(id: number, updateProjectDto: any): Promise<Project> {
-        await this.findOne(id);
-        await this.projectsRepository.update(id, updateProjectDto);
-        return this.findOne(id);
+    await this.findOne(id);
+    await this.projectsRepository.update(id, updateProjectDto);
+    return this.findOne(id);
     }
 
     async remove(id: number): Promise<{ message: string }> {
-        await this.findOne(id);
-        await this.projectsRepository.delete(id);
-        return { message: 'Project deleted successfully' };
+    await this.findOne(id);
+    await this.projectsRepository.delete(id);
+    return { message: 'Project deleted successfully' };
     }
 
     async addMember(projectId: number, userId: number): Promise<Project> {
@@ -84,6 +87,12 @@ export class ProjectsService {
         project.members.push(user);
     }
 
+    return this.projectsRepository.save(project);
+    }
+
+    async removeMember(projectId: number, userId: number): Promise<Project> {
+    const project = await this.findOne(projectId);
+    project.members = (project.members ?? []).filter((m) => m.id !== userId);
     return this.projectsRepository.save(project);
     }
 }

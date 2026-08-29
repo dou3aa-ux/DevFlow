@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { devopsApi } from '../lib/devops';
 import {
   FolderKanban,
   Filter,
@@ -69,6 +70,10 @@ export default function CreateProjectGroup() {
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [roleFilter, setRoleFilter] = useState<UserRole | 'ALL'>('ALL');
   const [search, setSearch] = useState('');
+  const [createdProject, setCreatedProject] = useState<{ id: number; name: string } | null>(null);
+  const [repoUrl, setRepoUrl] = useState('');
+  const [linkingRepo, setLinkingRepo] = useState(false);
+  const [repoLinked, setRepoLinked] = useState(false);
 
   useEffect(() => {
     usersApi
@@ -117,6 +122,20 @@ export default function CreateProjectGroup() {
     });
   };
 
+
+  const handleLinkRepo = async () => {
+  if (!createdProject || !repoUrl.trim()) return;
+  setLinkingRepo(true);
+  try {
+    await devopsApi.linkRepository(createdProject.id, repoUrl.trim(), 'GITHUB');
+    setRepoLinked(true);
+  } catch (err: any) {
+    setError(err?.response?.data?.message || 'Failed to link repository');
+  } finally {
+    setLinkingRepo(false);
+  }
+  };
+
   const handleCreate = async () => {
     if (!name.trim()) {
       setError('Project group name is required');
@@ -125,12 +144,12 @@ export default function CreateProjectGroup() {
     setError('');
     setSubmitting(true);
     try {
-      await projectsApi.create({
-        name: name.trim(),
-        description: description.trim() || undefined,
-        memberIds: [...selectedIds],
+      const project = await projectsApi.create({
+      name: name.trim(),
+      description: description.trim() || undefined,
+      memberIds: [...selectedIds],
       });
-      navigate('/admin/users'); // or wherever you want after create
+    setCreatedProject({ id: project.id, name: project.name });
     } catch (err: unknown) {
       const msg =
         (err as { response?: { data?: { message?: string } } })?.response?.data
@@ -402,6 +421,50 @@ export default function CreateProjectGroup() {
                 </button>
               </div>
             </div>
+            {createdProject && (
+  <div className="mt-6 bg-green-500/5 border border-green-500/20 rounded-2xl p-6">
+    <h3 className="text-white font-semibold mb-1">
+      "{createdProject.name}" created successfully
+    </h3>
+    <p className="text-slate-400 text-sm mb-4">
+      Optionally link a Git repository now, or skip and do it later from the CI/CD page.
+    </p>
+
+    {repoLinked ? (
+      <div className="flex items-center gap-3">
+        <p className="text-green-400 text-sm">Repository linked.</p>
+        <button
+          onClick={() => navigate('/kanban')}
+          className="bg-purple-600 hover:bg-purple-700 text-white text-sm px-4 py-2 rounded-lg"
+        >
+          Go to Kanban Board
+        </button>
+      </div>
+    ) : (
+      <div className="flex gap-3">
+        <input
+          value={repoUrl}
+          onChange={(e) => setRepoUrl(e.target.value)}
+          placeholder="https://github.com/your-org/your-repo"
+          className="flex-1 bg-white/[0.03] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder:text-slate-600 outline-none"
+        />
+        <button
+          onClick={handleLinkRepo}
+          disabled={linkingRepo || !repoUrl.trim()}
+          className="bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white text-sm px-4 py-2.5 rounded-lg whitespace-nowrap"
+        >
+          {linkingRepo ? 'Linking...' : 'Link Repository'}
+        </button>
+        <button
+          onClick={() => navigate('/kanban')}
+          className="text-slate-400 hover:text-white text-sm px-4 py-2.5"
+        >
+          Skip
+        </button>
+      </div>
+    )}
+  </div>
+)}
           </div>
         </main>
       </div>

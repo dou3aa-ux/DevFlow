@@ -10,6 +10,7 @@ import InfrastructurePage from './pages/InfrastructurePage';
 import KanbanPage from './pages/KanbanPage';
 import UserManagement from './pages/UserManagement';
 import CreateProjectGroup from './pages/CreateProjectGroup';
+import CreateTaskPage from './pages/CreateTaskPage';
 
 function App() {
   return (
@@ -19,7 +20,7 @@ function App() {
           <Route
           path="/kanban"
           element={
-          <ProtectedRoute>
+          <ProtectedRoute allowedRoles={['PROJECT_MANAGER', 'DEVELOPER', 'QA_TESTER', 'ADMINISTRATOR']}>
             <KanbanPage />
           </ProtectedRoute>
           }
@@ -74,6 +75,14 @@ function App() {
           element={
           <ProtectedRoute allowedRoles={['ADMINISTRATOR']}>
           <CreateProjectGroup />
+          </ProtectedRoute>
+          }
+          />
+          <Route
+          path="/projects/:id/tasks/new"
+          element={
+          <ProtectedRoute allowedRoles={['PROJECT_MANAGER', 'ADMINISTRATOR']}>
+            <CreateTaskPage />
           </ProtectedRoute>
           }
           />

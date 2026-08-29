@@ -4,6 +4,9 @@ import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
 import { UpdateTaskStatusDto } from './dto/update-task-status.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth/jwt-auth.guard';
+import { RolesGuard } from '../auth/guards/roles/roles.guard';
+import { Roles } from '../auth/decorators/roles.decorator';
+import { UserRole } from '../auth/enums/role.enum';
 
 @Controller('tasks')
 @UseGuards(JwtAuthGuard)
@@ -11,8 +14,10 @@ export class TasksController {
   constructor(private readonly tasksService: TasksService) {}
 
   @Post()
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.PROJECT_MANAGER, UserRole.ADMINISTRATOR)
   create(@Query('projectId') projectId: string, @Body() dto: CreateTaskDto) {
-    return this.tasksService.create(+projectId, dto);
+  return this.tasksService.create(+projectId, dto);
   }
 
   @Get()
