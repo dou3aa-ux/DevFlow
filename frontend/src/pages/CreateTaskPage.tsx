@@ -18,6 +18,9 @@ const PRIORITY_STYLE: Record<Task['priority'], string> = {
   CRITICAL: 'border-red-500 text-red-400',
 };
 
+// Only Developers and QA Testers can actually be assigned tasks.
+const ASSIGNABLE_ROLES = ['DEVELOPER', 'QA_TESTER'];
+
 export default function CreateTaskPage() {
   const { id } = useParams();
   const projectId = Number(id);
@@ -38,6 +41,8 @@ export default function CreateTaskPage() {
     projectsApi.getOne(projectId).then(setProject);
     sprintsApi.getAll(projectId).then(setSprints).catch(() => setSprints([]));
   }, [projectId]);
+
+  const assignableMembers = project?.members.filter((m) => ASSIGNABLE_ROLES.includes(m.role)) ?? [];
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -118,13 +123,21 @@ export default function CreateTaskPage() {
                   className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white outline-none"
                 >
                   <option value="">Unassigned</option>
-                  {project?.members.map((m) => (
-                    <option key={m.id} value={m.id}>{m.username}</option>
+                  {assignableMembers.map((m) => (
+                    <option key={m.id} value={m.id}>
+                      {m.username} ({m.role === 'DEVELOPER' ? 'Developer' : 'QA Tester'})
+                    </option>
                   ))}
                 </select>
-                <p className="text-xs text-slate-600 mt-2">
-                  Only project members can be assigned. Add members from the project page first.
-                </p>
+                {assignableMembers.length === 0 ? (
+                  <p className="text-xs text-amber-500/80 mt-2">
+                    No developers or testers on this project yet. Add them from Admin → Teams first.
+                  </p>
+                ) : (
+                  <p className="text-xs text-slate-600 mt-2">
+                    Only developers and QA testers on this project can be assigned.
+                  </p>
+                )}
               </div>
 
               <div>
