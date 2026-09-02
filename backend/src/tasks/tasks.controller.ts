@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Request, UseGuards, Query } from '@nestjs/common';
 import { TasksService } from './tasks.service';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
@@ -33,6 +33,13 @@ export class TasksController {
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.tasksService.findOne(+id);
+  }
+
+  @Get('my-tasks')
+  @UseGuards(JwtAuthGuard)
+  async getMyTasks(@Request() req) {
+    const userId = req.user.userId;
+    return this.tasksService.findByAssignee(userId);
   }
 
   @Patch(':id')

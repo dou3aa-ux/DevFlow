@@ -11,6 +11,7 @@ import {
   Lock,
   FileClock,
   ClipboardCheck,
+  Code2, // ✅ ADD THIS IMPORT
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
@@ -18,6 +19,7 @@ type NavItem = { label: string; icon: typeof LayoutDashboard; path: string };
 
 const TEAM_NAV: NavItem[] = [
   { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
+  { label: 'Developer', icon: Code2, path: '/developer' }, // ✅ ADD THIS
   { label: 'Kanban', icon: Kanban, path: '/kanban' },
   { label: 'CI/CD', icon: Rocket, path: '/cicd' },
   { label: 'Infrastructure', icon: Server, path: '/infrastructure' },
@@ -28,6 +30,7 @@ const ADMIN_NAV: NavItem[] = [
   { label: 'User Management', icon: UserCog, path: '/admin/users' },
   { label: 'Role Assignment', icon: ShieldCheck, path: '/admin/roles' },
   { label: 'Teams', icon: Users, path: '/admin/teams' },
+  { label: 'Developer', icon: Code2, path: '/developer' }, // ✅ ADD THIS (so admin can view it too)
   { label: 'Kanban', icon: Kanban, path: '/kanban' },
   { label: 'Workspace Security', icon: Lock, path: '/admin/security' },
   { label: 'System Logs', icon: FileClock, path: '/admin/logs' },

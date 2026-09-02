@@ -23,25 +23,52 @@ export class BuildsService {
   ) {}
 
   // Called by the webhook (or manually) — creates the Build record and kicks off the real work in the background
-  async trigger(repositoryId: number, commitSha: string): Promise<Build> {
-    const repository = await this.reposRepository.findOne({ where: { id: repositoryId } });
-    if (!repository) throw new NotFoundException(`Repository ${repositoryId} not found`);
+//  async trigger(repositoryId: number, commitSha: string): Promise<Build> {
+//    const repository = await this.reposRepository.findOne({ where: { id: repositoryId } });
+  //  if (!repository) throw new NotFoundException(`Repository ${repositoryId} not found`);
 
-    const build = this.buildsRepository.create({
-      repository,
-      commitSha,
-      version: commitSha.substring(0, 7),
-      status: BuildStatus.PENDING,
-    });
-    const saved = await this.buildsRepository.save(build);
+//    const build = this.buildsRepository.create({
+  //    repository,
+  //    commitSha,
+  //    version: commitSha.substring(0, 7),
+  //    status: BuildStatus.PENDING,
+  //  });
+   // const saved = await this.buildsRepository.save(build);
 
     // Fire and forget — don't make the webhook/caller wait for the whole build to finish
-    this.runBuildAsync(saved.id, repository.url, commitSha).catch((err) =>
-      this.logger.error(`Build ${saved.id} crashed: ${err.message}`),
-    );
+  //  this.runBuildAsync(saved.id, repository.url, commitSha).catch((err) =>
+    //  this.logger.error(`Build ${saved.id} crashed: ${err.message}`),
+  //  );
 
-    return saved;
-  }
+   // return saved;
+  //}
+
+  async trigger(
+  repositoryId: number,
+  commitSha: string,
+  branch?: string,
+  commitMessage?: string,
+): Promise<Build> {
+  const repository = await this.reposRepository.findOne({ where: { id: repositoryId } });
+  if (!repository) throw new NotFoundException(`Repository ${repositoryId} not found`);
+
+  const build = this.buildsRepository.create({
+    repository,
+    commitSha,
+    branch,           // ✅ added
+    commitMessage,    // ✅ added
+    version: commitSha.substring(0, 7),
+    status: BuildStatus.PENDING,
+  });
+  
+  const saved = await this.buildsRepository.save(build);
+
+  this.runBuildAsync(saved.id, repository.url, commitSha).catch((err) =>
+    this.logger.error(`Build ${saved.id} crashed: ${err.message}`),
+  );
+
+  return saved;
+}
 
   private async runBuildAsync(buildId: number, repoUrl: string, commitSha: string) {
     const workDir = path.join(os.tmpdir(), `devflow-build-${buildId}`);
@@ -132,4 +159,12 @@ export class BuildsService {
     if (!build) throw new NotFoundException(`Build ${id} not found`);
     return build;
   }
+
+  async findRecent(limit: number = 20): Promise<Build[]> {
+  return this.buildsRepository.find({
+  relations: { repository: true },
+  order: { startedAt: 'DESC' },
+  take: limit,
+});
+}
 }

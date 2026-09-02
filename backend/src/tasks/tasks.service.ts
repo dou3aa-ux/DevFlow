@@ -63,6 +63,14 @@ export class TasksService {
     return task;
   }
 
+  async findByAssignee(userId: number) {
+  return this.tasksRepository.find({
+    where: { assignee: { id: userId } },  // ✅ relation syntax, not assigneeId
+    relations: { project: true, sprint: true, assignee: true },
+    order: { createdAt: 'DESC' },  // ✅ use createdAt, not updatedAt
+  });
+}
+
   async update(id: number, dto: UpdateTaskDto): Promise<Task> {
     const task = await this.findOne(id);
 

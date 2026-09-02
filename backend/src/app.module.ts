@@ -15,6 +15,8 @@ import { StorageModule } from './storage/storage.module';
 import { ArtifactsModule } from './artifacts/artifacts.module';
 import { DeploymentsModule } from './deployments/deployments.module';
 import { InfrastructureModule } from './infrastructure/infrastructure.module';
+import { RedisModule } from './redis/redis.module';
+
 
 
 
@@ -47,6 +49,7 @@ import { InfrastructureModule } from './infrastructure/infrastructure.module';
     ArtifactsModule,
     DeploymentsModule,
     InfrastructureModule,
+    RedisModule,
   ],
   controllers: [],
   providers: [],

@@ -3,6 +3,7 @@ import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
+import DeveloperDashboard from './pages/DeveloperDashboard'; // ✅ ADD THIS
 import Projects from './pages/Projects';
 import ProjectBoard from './pages/ProjectBoard';
 import CiCdPage from './pages/CiCdPage';
@@ -18,23 +19,34 @@ function App() {
       <BrowserRouter>
         <Routes>
           <Route
-          path="/kanban"
-          element={
-          <ProtectedRoute allowedRoles={['PROJECT_MANAGER', 'DEVELOPER', 'QA_TESTER', 'ADMINISTRATOR']}>
-            <KanbanPage />
-          </ProtectedRoute>
-          }
+            path="/kanban"
+            element={
+              <ProtectedRoute allowedRoles={['PROJECT_MANAGER', 'DEVELOPER', 'QA_TESTER', 'ADMINISTRATOR']}>
+                <KanbanPage />
+              </ProtectedRoute>
+            }
           />
           <Route path="/cicd" element={<ProtectedRoute><CiCdPage /></ProtectedRoute>} />
           <Route path="/infrastructure" element={<ProtectedRoute><InfrastructurePage /></ProtectedRoute>} />
           <Route path="/login" element={<Login />} />
+
+          {/* ✅ ADD THIS ROUTE */}
           <Route
-          path="/dashboard"
-          element={
-            <ProtectedRoute allowedRoles={['PROJECT_MANAGER', 'DEVELOPER', 'QA_TESTER']}>
-              <Dashboard />
-            </ProtectedRoute>
-          }
+            path="/developer"
+            element={
+              <ProtectedRoute allowedRoles={['DEVELOPER', 'ADMINISTRATOR']}>
+                <DeveloperDashboard />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/dashboard"
+            element={
+              <ProtectedRoute allowedRoles={['PROJECT_MANAGER', 'DEVELOPER', 'QA_TESTER']}>
+                <Dashboard />
+              </ProtectedRoute>
+            }
           />
           <Route
             path="/projects"
@@ -53,38 +65,38 @@ function App() {
             }
           />
           <Route
-          path="/admin/users"
-          element={
-            <ProtectedRoute allowedRoles={['ADMINISTRATOR']}>
-              <UserManagement />
-            </ProtectedRoute>
-          }
+            path="/admin/users"
+            element={
+              <ProtectedRoute allowedRoles={['ADMINISTRATOR']}>
+                <UserManagement />
+              </ProtectedRoute>
+            }
           />
           <Route
-          path="/admin/roles"
-          element={
-          <ProtectedRoute allowedRoles={['ADMINISTRATOR']}>
-            <div className="min-h-screen bg-[#050508] text-white p-8">
-              Role Assignment — coming next
-            </div>
-          </ProtectedRoute>
-          }
+            path="/admin/roles"
+            element={
+              <ProtectedRoute allowedRoles={['ADMINISTRATOR']}>
+                <div className="min-h-screen bg-[#050508] text-white p-8">
+                  Role Assignment — coming next
+                </div>
+              </ProtectedRoute>
+            }
           />
           <Route
-          path="/admin/teams"
-          element={
-          <ProtectedRoute allowedRoles={['ADMINISTRATOR']}>
-          <CreateProjectGroup />
-          </ProtectedRoute>
-          }
+            path="/admin/teams"
+            element={
+              <ProtectedRoute allowedRoles={['ADMINISTRATOR']}>
+                <CreateProjectGroup />
+              </ProtectedRoute>
+            }
           />
           <Route
-          path="/projects/:id/tasks/new"
-          element={
-          <ProtectedRoute allowedRoles={['PROJECT_MANAGER', 'ADMINISTRATOR']}>
-            <CreateTaskPage />
-          </ProtectedRoute>
-          }
+            path="/projects/:id/tasks/new"
+            element={
+              <ProtectedRoute allowedRoles={['PROJECT_MANAGER', 'ADMINISTRATOR']}>
+                <CreateTaskPage />
+              </ProtectedRoute>
+            }
           />
 
           <Route path="*" element={<Navigate to="/login" replace />} />

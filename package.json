@@ -5,13 +5,13 @@
   "scripts": {
     "backend": "npm --prefix ./backend run start:dev",
     "frontend": "npm --prefix ./frontend run dev",
-    "mobile": "npm --prefix ./mobile run start"
+    "mobile": "npm --prefix ./mobile run start",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down"
   },
-  "dependencies": {
-    "better-sqlite3": "^12.11.1",
-    "sqlite3": "^6.0.1"
-  },
-  "devDependencies": {
-    "@types/better-sqlite3": "^7.6.13"
-  }
+  "workspaces": [
+    "backend",
+    "frontend",
+    "mobile"
+  ]
 }

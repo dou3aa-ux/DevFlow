@@ -19,6 +19,13 @@ export class Build {
   @Column({ nullable: true })
   version!: string;
 
+  @Column({ nullable: true })
+  branch?: string;
+
+  @Column({ nullable: true })
+  commitMessage?: string;
+
+
   @Column({ type: 'enum', enum: BuildStatus, default: BuildStatus.PENDING })
   status!: BuildStatus;
 
