@@ -1,18 +1,54 @@
-import { Injectable, ConflictException, NotFoundException } from '@nestjs/common';
+import { Injectable, ConflictException, NotFoundException, OnModuleInit } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import * as bcrypt from 'bcrypt';
+import * as bcrypt from 'bcryptjs';
 import { User } from './entities/user/user';
 import { UserRole } from '../auth/enums/role.enum';
 import { AdminCreateUserDto } from './dto/admin-create-user.dto';
 import { generateTempPassword } from './utils/generate-temp-password';
 
 @Injectable()
-export class UsersService {
+export class UsersService implements OnModuleInit {
   constructor(
     @InjectRepository(User)
     private readonly usersRepo: Repository<User>,
   ) {}
+
+  async onModuleInit() {
+    await this.seedAdmin();
+  }
+
+  async seedAdmin() {
+    try {
+      const adminEmail = 'admin@devflow.io';
+      const hashedPassword = await bcrypt.hash('admin123', 10);
+      let admin = await this.usersRepo.findOne({
+        where: [{ email: adminEmail }, { username: 'System Admin' }],
+      });
+
+      if (!admin) {
+        admin = this.usersRepo.create({
+          username: 'System Admin',
+          email: adminEmail,
+          password: hashedPassword,
+          role: UserRole.ADMINISTRATOR,
+          isActive: true,
+        });
+      } else {
+        admin.email = adminEmail;
+        admin.username = 'System Admin';
+        admin.password = hashedPassword;
+        admin.role = UserRole.ADMINISTRATOR;
+        admin.isActive = true;
+      }
+      const saved = await this.usersRepo.save(admin);
+      console.log('✅ Administrator account verified: admin@devflow.io / admin123 (Role: ADMINISTRATOR)');
+      return { success: true, user: { id: saved.id, email: saved.email, role: saved.role } };
+    } catch (err: any) {
+      console.error('Failed to seed admin user:', err?.message);
+      return { success: false, error: err?.message };
+    }
+  }
 
   async findByEmail(email: string): Promise<User | null> {
     return this.usersRepo.findOne({ where: { email } });
@@ -42,8 +78,11 @@ export class UsersService {
   // this is the ONLY moment the plain password is ever available.
   // The frontend must show it once and never fetch it again (it isn't stored anywhere in plain text).
   async adminCreate(dto: AdminCreateUserDto): Promise<{ user: Omit<User, 'password'>; tempPassword: string }> {
-    const existing = await this.findByEmail(dto.email);
-    if (existing) throw new ConflictException('Email already registered');
+    const existingEmail = await this.usersRepo.findOne({ where: { email: dto.email } });
+    if (existingEmail) throw new ConflictException('Email already registered');
+
+    const existingUsername = await this.usersRepo.findOne({ where: { username: dto.username } });
+    if (existingUsername) throw new ConflictException(`Username "${dto.username}" already exists. Please choose a different name.`);
 
     const plainPassword = dto.password ?? generateTempPassword();
     const hashedPassword = await bcrypt.hash(plainPassword, 10);
@@ -55,10 +94,17 @@ export class UsersService {
       role: dto.role,
       isActive: true,
     });
-    const saved = await this.usersRepo.save(user);
 
-    const { password, ...userWithoutPassword } = saved;
-    return { user: userWithoutPassword, tempPassword: plainPassword };
+    try {
+      const saved = await this.usersRepo.save(user);
+      const { password, ...userWithoutPassword } = saved;
+      return { user: userWithoutPassword, tempPassword: plainPassword };
+    } catch (err: any) {
+      if (err?.code === '23505') {
+        throw new ConflictException('A user with this username or email already exists');
+      }
+      throw err;
+    }
   }
 
   async updateRole(id: number, role: UserRole): Promise<User> {

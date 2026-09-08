@@ -15,8 +15,11 @@ export class SprintsController {
   }
 
   @Get()
-  findAllByProject(@Query('projectId') projectId: string) {
-    return this.sprintsService.findAllByProject(+projectId);
+  findAllByProject(@Query('projectId') projectId?: string) {
+    if (projectId && !isNaN(+projectId)) {
+      return this.sprintsService.findAllByProject(+projectId);
+    }
+    return this.sprintsService.findAll();
   }
 
   @Get(':id')

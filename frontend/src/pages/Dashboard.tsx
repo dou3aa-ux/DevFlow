@@ -39,11 +39,30 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (!user) return;
-    dashboardApi.getOverview(user.id).then((d) => {
-      setData(d);
-      if (d.projects.length > 0) setSelectedProjectId(d.projects[0].id);
-      setLoading(false);
-    });
+    dashboardApi
+      .getOverview(user.id)
+      .then((d) => {
+        setData(d);
+        if (d.projects.length > 0) setSelectedProjectId(d.projects[0].id);
+        setLoading(false);
+      })
+      .catch(() => {
+        setData({
+          projects: [],
+          myTasks: [],
+          sprintProgress: 0,
+          totalTasks: 0,
+          deployments: [],
+          activity: [],
+          deployFrequency: [
+            { week: 'Week 1', count: 0 },
+            { week: 'Week 2', count: 0 },
+            { week: 'Week 3', count: 0 },
+            { week: 'Week 4', count: 0 },
+          ],
+        });
+        setLoading(false);
+      });
   }, [user]);
 
   if (loading || !data) {

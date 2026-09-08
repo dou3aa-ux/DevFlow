@@ -29,6 +29,13 @@ export class RepositoriesService {
     return this.reposRepository.save(repo);
   }
 
+  async findAll(): Promise<Repository[]> {
+    return this.reposRepository.find({
+      relations: { project: true },
+      order: { connectedAt: 'DESC' },
+    });
+  }
+
   async findByProject(projectId: number): Promise<Repository> {
     const repo = await this.reposRepository.findOne({ where: { project: { id: projectId } } });
     if (!repo) throw new NotFoundException(`No repository linked to project ${projectId}`);

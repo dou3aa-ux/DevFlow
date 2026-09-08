@@ -21,18 +21,17 @@ export class TasksController {
   }
 
   @Get()
-  findAllByProject(@Query('projectId') projectId: string) {
-    return this.tasksService.findAllByProject(+projectId);
+  findAllByProject(@Query('projectId') projectId?: string) {
+    if (projectId && !isNaN(+projectId)) {
+      return this.tasksService.findAllByProject(+projectId);
+    }
+    return this.tasksService.findAll();
   }
 
   @Get('board')
-  getBoard(@Query('projectId') projectId: string) {
-    return this.tasksService.getBoardByProject(+projectId);
-  }
-
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.tasksService.findOne(+id);
+  getBoard(@Query('projectId') projectId?: string) {
+    const id = projectId && !isNaN(+projectId) ? +projectId : 1;
+    return this.tasksService.getBoardByProject(id);
   }
 
   @Get('my-tasks')
@@ -40,6 +39,11 @@ export class TasksController {
   async getMyTasks(@Request() req) {
     const userId = req.user.userId;
     return this.tasksService.findByAssignee(userId);
+  }
+
+  @Get(':id')
+  findOne(@Param('id') id: string) {
+    return this.tasksService.findOne(+id);
   }
 
   @Patch(':id')

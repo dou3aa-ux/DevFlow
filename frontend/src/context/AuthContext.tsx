@@ -11,6 +11,7 @@ interface User {
 interface AuthContextType {
     user: User | null;
     login: (email: string, password: string) => Promise<{ user: User; accessToken: string }>;
+    loginAsDemoUser: (demoUser: User) => void;
     logout: () => void;
 }
 
@@ -30,6 +31,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return res.data;
     };
 
+    const loginAsDemoUser = (demoUser: User) => {
+      const mockToken = `mock-token-${demoUser.role.toLowerCase()}-${Date.now()}`;
+      localStorage.setItem('devflow_token', mockToken);
+      localStorage.setItem('devflow_user', JSON.stringify(demoUser));
+      setUser(demoUser);
+    };
+
     const logout = () => {
     localStorage.removeItem('devflow_token');
     localStorage.removeItem('devflow_user');
@@ -37,7 +45,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
 
     return (
-    <AuthContext.Provider value={{ user, login, logout }}>
+    <AuthContext.Provider value={{ user, login, loginAsDemoUser, logout }}>
         {children}
     </AuthContext.Provider>
     );

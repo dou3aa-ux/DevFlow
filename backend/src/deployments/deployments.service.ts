@@ -100,9 +100,17 @@ export class DeploymentsService {
     });
   }
 
+  async findAll(): Promise<Deployment[]> {
+    return this.deploymentsRepository.find({
+      relations: { project: true, build: true },
+      order: { deployedAt: 'DESC' },
+    });
+  }
+
   async findAllByProject(projectId: number): Promise<Deployment[]> {
     return this.deploymentsRepository.find({
       where: { project: { id: projectId } },
+      relations: { project: true, build: true },
       order: { deployedAt: 'DESC' },
     });
   }

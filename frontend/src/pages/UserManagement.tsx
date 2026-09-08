@@ -35,10 +35,17 @@ export default function UserManagementPage() {
   const [copied, setCopied] = useState(false);
 
   const load = () => {
-    usersApi.getAll().then((u) => {
-      setUsers(u);
-      setLoading(false);
-    });
+    usersApi
+      .getAll()
+      .then((u) => {
+        setUsers(u);
+      })
+      .catch((err) => {
+        console.error('Failed to load users:', err);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
   };
 
   useEffect(() => {

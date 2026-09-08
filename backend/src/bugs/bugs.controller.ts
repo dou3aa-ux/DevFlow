@@ -16,8 +16,14 @@ export class BugsController {
   }
 
   @Get()
-  findAllByTask(@Query('taskId') taskId: string) {
-    return this.bugsService.findAllByTask(+taskId);
+  findAll(
+    @Query('taskId') taskId?: string,
+    @Query('projectId') projectId?: string,
+  ) {
+    if (taskId) {
+      return this.bugsService.findAllByTask(+taskId);
+    }
+    return this.bugsService.findAll(projectId ? +projectId : undefined);
   }
 
   @Get(':id')

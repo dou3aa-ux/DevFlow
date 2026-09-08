@@ -14,8 +14,11 @@ export class RepositoriesController {
   }
 
   @Get()
-  findByProject(@Query('projectId') projectId: string) {
-    return this.repositoriesService.findByProject(+projectId);
+  findByProject(@Query('projectId') projectId?: string) {
+    if (projectId && !isNaN(+projectId)) {
+      return this.repositoriesService.findByProject(+projectId);
+    }
+    return this.repositoriesService.findAll();
   }
 
   @Get(':id/commits')

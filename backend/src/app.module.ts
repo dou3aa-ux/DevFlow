@@ -16,6 +16,8 @@ import { ArtifactsModule } from './artifacts/artifacts.module';
 import { DeploymentsModule } from './deployments/deployments.module';
 import { InfrastructureModule } from './infrastructure/infrastructure.module';
 import { RedisModule } from './redis/redis.module';
+import { AppController } from './app.controller';
+import { AppService } from './app.service';
 
 
 
@@ -51,7 +53,7 @@ import { RedisModule } from './redis/redis.module';
     InfrastructureModule,
     RedisModule,
   ],
-  controllers: [],
-  providers: [],
+  controllers: [AppController],
+  providers: [AppService],
 })
 export class AppModule {}

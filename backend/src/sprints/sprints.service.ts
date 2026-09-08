@@ -26,10 +26,18 @@ export class SprintsService {
     return this.sprintsRepository.save(sprint);
   }
 
+  async findAll(): Promise<Sprint[]> {
+    return this.sprintsRepository.find({
+      relations: { project: true },
+      order: { startDate: 'DESC' },
+    });
+  }
+
   async findAllByProject(projectId: number): Promise<Sprint[]> {
     return this.sprintsRepository.find({
       where: { project: { id: projectId } },
       relations: { project: true },
+      order: { startDate: 'DESC' },
     });
   }
 

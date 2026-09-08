@@ -26,7 +26,7 @@ export interface DashboardData {
 
 export const dashboardApi = {
   async getOverview(currentUserId: number): Promise<DashboardData> {
-    const projects = await projectsApi.getAll();
+    const projects = await projectsApi.getAll().catch(() => []);
 
     let allTasks: Task[] = [];
     let allDeployments: Deployment[] = [];

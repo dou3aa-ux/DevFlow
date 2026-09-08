@@ -20,11 +20,17 @@ export class StorageService implements OnModuleInit {
     }
 
     async onModuleInit() {
-    const exists = await this.client.bucketExists(this.bucket).catch(() => false);
-    if (!exists) {
-        await this.client.makeBucket(this.bucket);
-        this.logger.log(`Created MinIO bucket: ${this.bucket}`);
-    }
+      try {
+        const exists = await this.client.bucketExists(this.bucket).catch(() => false);
+        if (!exists) {
+          await this.client.makeBucket(this.bucket).catch((err) => {
+            this.logger.warn(`MinIO makeBucket notice: ${err.message}`);
+          });
+          this.logger.log(`MinIO bucket configured: ${this.bucket}`);
+        }
+      } catch (err: any) {
+        this.logger.warn(`MinIO connection warning (app will proceed): ${err?.message}`);
+      }
     }
 
     async uploadFile(localFilePath: string, objectName: string): Promise<string> {

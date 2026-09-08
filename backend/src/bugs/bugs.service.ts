@@ -33,10 +33,24 @@ export class BugsService {
     return this.bugsRepository.save(bug);
   }
 
+  async findAll(projectId?: number, taskId?: number): Promise<BugReport[]> {
+    const where: any = {};
+    if (taskId) {
+      where.task = { id: taskId };
+    } else if (projectId) {
+      where.task = { project: { id: projectId } };
+    }
+    return this.bugsRepository.find({
+      where,
+      relations: { task: { project: true }, reportedBy: true },
+      order: { createdAt: 'DESC' },
+    });
+  }
+
   async findAllByTask(taskId: number): Promise<BugReport[]> {
     return this.bugsRepository.find({
       where: { task: { id: taskId } },
-      relations: { reportedBy: true },
+      relations: { reportedBy: true, task: true },
       order: { createdAt: 'DESC' },
     });
   }

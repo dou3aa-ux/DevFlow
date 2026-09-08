@@ -15,8 +15,11 @@ export class CommentsController {
   }
 
   @Get()
-  findAllByTask(@Query('taskId') taskId: string) {
-    return this.commentsService.findAllByTask(+taskId);
+  findAllByTask(@Query('taskId') taskId?: string) {
+    if (taskId && !isNaN(+taskId)) {
+      return this.commentsService.findAllByTask(+taskId);
+    }
+    return [];
   }
 
   @Delete(':id')

@@ -47,10 +47,18 @@ export class TasksService {
     return this.tasksRepository.save(task);
   }
 
+  async findAll(): Promise<Task[]> {
+    return this.tasksRepository.find({
+      relations: { project: true, sprint: true, assignee: true },
+      order: { createdAt: 'DESC' },
+    });
+  }
+
   async findAllByProject(projectId: number): Promise<Task[]> {
     return this.tasksRepository.find({
       where: { project: { id: projectId } },
       relations: { project: true, sprint: true, assignee: true },
+      order: { createdAt: 'DESC' },
     });
   }
 

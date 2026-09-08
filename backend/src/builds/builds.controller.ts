@@ -13,13 +13,11 @@ export class BuildsController {
   }
 
   @Get()
-  findAllByRepository(@Query('repositoryId') repositoryId: string) {
-    return this.buildsService.findAllByRepository(+repositoryId);
-  }
-
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.buildsService.findOne(+id);
+  findAllByRepository(@Query('repositoryId') repositoryId?: string) {
+    if (repositoryId && !isNaN(+repositoryId)) {
+      return this.buildsService.findAllByRepository(+repositoryId);
+    }
+    return this.buildsService.findRecent(50);
   }
 
   @Get('recent')
@@ -28,5 +26,10 @@ export class BuildsController {
     // Get builds from repositories the user has access to
     // For now, return last 20 builds across all repos
     return this.buildsService.findRecent(20);
+  }
+
+  @Get(':id')
+  findOne(@Param('id') id: string) {
+    return this.buildsService.findOne(+id);
   }
 }

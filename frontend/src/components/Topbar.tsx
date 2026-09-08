@@ -1,4 +1,4 @@
-import { Search, Bell, ChevronDown } from 'lucide-react';
+import { Search, Bell, ChevronDown, LogOut } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import type { Project } from '../lib/projects';
 
@@ -9,7 +9,7 @@ interface TopbarProps {
 }
 
 export default function Topbar({ projects, selectedProjectId, onSelectProject }: TopbarProps) {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const selectedProject = projects.find((p) => p.id === selectedProjectId);
 
   return (
@@ -54,6 +54,13 @@ export default function Topbar({ projects, selectedProjectId, onSelectProject }:
           <div className="w-9 h-9 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white text-sm font-semibold">
             {user?.username?.charAt(0).toUpperCase() ?? 'U'}
           </div>
+          <button
+            onClick={logout}
+            title="Log Out"
+            className="w-9 h-9 rounded-lg bg-[#12121a] border border-white/5 flex items-center justify-center text-slate-400 hover:text-red-400 hover:border-red-500/30 transition ml-1"
+          >
+            <LogOut size={15} />
+          </button>
         </div>
       </div>
 

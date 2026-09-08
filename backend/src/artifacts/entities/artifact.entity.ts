@@ -19,12 +19,21 @@ export class Artifact {
     @Column()
     version!: string;
 
-    @Column()
+    @Column({ nullable: true })
     storageKey!: string; // the object name inside MinIO
 
-    @OneToOne(() => Build)
+    @Column({ type: 'text', nullable: true })
+    releaseNotes?: string;
+
+    @Column({ nullable: true })
+    fileSize?: string;
+
+    @Column({ nullable: true })
+    downloadUrl?: string;
+
+    @OneToOne(() => Build, { nullable: true })
     @JoinColumn()
-    build!: Build;
+    build?: Build;
 
     @CreateDateColumn({ type: 'timestamp' })
     createdAt!: Date;

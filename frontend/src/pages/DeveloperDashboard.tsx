@@ -1,5 +1,7 @@
+import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import axios from 'axios';
+import { api } from '../lib/api';
+import { projectsApi, type Project } from '../lib/projects';
 import {
   Layout,
   CheckCircle,
@@ -20,16 +22,6 @@ import {
 import Sidebar from '../components/Sidebar';
 import Topbar from '../components/Topbar';
 import { useAuth } from '../context/AuthContext';
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-
-const api = axios.create({ baseURL: API_URL });
-
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token');
-  if (token) config.headers.Authorization = `Bearer ${token}`;
-  return config;
-});
 
 const fetchMyTasks = async () => {
   const { data } = await api.get('/tasks/my-tasks');
@@ -73,6 +65,16 @@ function CircleDot({ className }: { className?: string }) {
 
 export default function DeveloperDashboard() {
   const { user } = useAuth();
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [selectedProjectId, setSelectedProjectId] = useState<number | null>(null);
+
+  useEffect(() => {
+    projectsApi.getAll().then((projs) => {
+      setProjects(projs);
+      if (projs.length > 0) setSelectedProjectId(projs[0].id);
+    });
+  }, []);
+
   const { data: tasks, isLoading: tasksLoading } = useQuery({ queryKey: ['myTasks'], queryFn: fetchMyTasks });
   const { data: builds, isLoading: buildsLoading } = useQuery({ queryKey: ['recentBuilds'], queryFn: fetchRecentBuilds, refetchInterval: 10000 });
 
@@ -85,7 +87,11 @@ export default function DeveloperDashboard() {
       <Sidebar />
 
       <div className="flex-1 flex flex-col">
-        <Topbar projects={[]} selectedProjectId={null} onSelectProject={() => {}} />
+        <Topbar
+          projects={projects}
+          selectedProjectId={selectedProjectId}
+          onSelectProject={setSelectedProjectId}
+        />
 
         <main className="flex-1 p-8 space-y-6">
           {/* ═══ Welcome Banner ═══ */}

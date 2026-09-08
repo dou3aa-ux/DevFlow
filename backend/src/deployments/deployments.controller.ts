@@ -14,8 +14,11 @@ export class DeploymentsController {
   }
 
   @Get()
-  findAllByProject(@Query('projectId') projectId: string) {
-    return this.deploymentsService.findAllByProject(+projectId);
+  findAllByProject(@Query('projectId') projectId?: string) {
+    if (projectId && !isNaN(+projectId)) {
+      return this.deploymentsService.findAllByProject(+projectId);
+    }
+    return this.deploymentsService.findAll();
   }
 
   @Get(':id')
