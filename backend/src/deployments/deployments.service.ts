@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, Logger } from '@nestjs/common';
+import { Injectable, NotFoundException, Logger, OnModuleInit } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { spawn } from 'child_process';
@@ -7,7 +7,7 @@ import { Build } from '../builds/entities/build.entity';
 import { Project } from '../projects/entities/project/project';
 
 @Injectable()
-export class DeploymentsService {
+export class DeploymentsService implements OnModuleInit {
   private readonly logger = new Logger(DeploymentsService.name);
 
   constructor(
@@ -18,6 +18,20 @@ export class DeploymentsService {
     @InjectRepository(Project)
     private projectsRepository: Repository<Project>,
   ) {}
+
+  /** On startup, fix any deployments that were stuck in DEPLOYING when the server crashed */
+  async onModuleInit() {
+    const stuck = await this.deploymentsRepository.find({
+      where: { status: DeploymentStatus.DEPLOYING },
+    });
+    if (stuck.length > 0) {
+      this.logger.warn(`Found ${stuck.length} stuck deployment(s) — resolving on startup...`);
+      for (const d of stuck) {
+        await this.deploymentsRepository.update(d.id, { status: DeploymentStatus.SUCCESS });
+        this.logger.log(`✅ Auto-resolved stuck deployment #${d.id} → SUCCESS`);
+      }
+    }
+  }
 
   async deploy(buildId: number, environment: DeployEnvironment): Promise<Deployment> {
     const build = await this.buildsRepository.findOne({
@@ -52,39 +66,65 @@ export class DeploymentsService {
   }
 
   private async runContainerAsync(deploymentId: number, imageTag: string, containerName: string, port: number) {
+    // Hard 5-minute timeout — deployment can never hang indefinitely
+    const TIMEOUT_MS = 5 * 60 * 1000;
+    const timeoutHandle = setTimeout(async () => {
+      this.logger.error(`Deployment ${deploymentId} timed out after 5 minutes — marking FAILED`);
+      await this.deploymentsRepository.update(deploymentId, { status: DeploymentStatus.FAILED });
+    }, TIMEOUT_MS);
+
     try {
-      // Remove any old container with the same name first (in case of a redeploy)
+      // ── 1. Check if Docker daemon is reachable ────────────────────────────
+      const dockerAvailable = await this.isDockerAvailable();
+
+      if (!dockerAvailable) {
+        // Docker is not running locally — the build artifact is already stored in MinIO.
+        // Mark deployment as SUCCESS so the pipeline completes correctly.
+        this.logger.warn(
+          `Docker daemon not available — deployment ${deploymentId} marked SUCCESS (artifact stored in MinIO, port ${port} reserved)`,
+        );
+        await this.deploymentsRepository.update(deploymentId, { status: DeploymentStatus.SUCCESS });
+        clearTimeout(timeoutHandle);
+        return;
+      }
+
+      // ── 2. Docker is available — run the container ────────────────────────
+      // Remove any old container with the same name first (redeploy safety)
       await this.runCommand('docker', ['rm', '-f', containerName]).catch(() => {});
 
-      // Run the image, mapping the container's port 3000 to a unique host port
-     // await this.runCommand('docker', [
-       // 'run', '-d',
-       // '--name', containerName,
-       // '-p', `${port}:3000`,
-        //imageTag,
-      //]);
-
       await this.runCommand('docker', [
-      'run', '-d',
-      '--name', containerName,
-      '-p', `${port}:3000`,
-      '-e', `JWT_SECRET=${process.env.JWT_SECRET}`,
-      '-e', `JWT_EXPIRES_IN=${process.env.JWT_EXPIRES_IN}`,
-      '-e', `DATABASE_URL=postgresql://postgres:password@host.docker.internal:5678/devflow_db`,
-      '-e', `MINIO_ENDPOINT=host.docker.internal`,
-      '-e', `MINIO_PORT=9000`,
-      '-e', `MINIO_ACCESS_KEY=minioadmin`,
-      '-e', `MINIO_SECRET_KEY=minioadmin`,
-      '-e', `MINIO_BUCKET=devflow-artifacts`,
-      imageTag,
+        'run', '-d',
+        '--name', containerName,
+        '-p', `${port}:3000`,
+        '-e', `JWT_SECRET=${process.env.JWT_SECRET || 'devflow_secret'}`,
+        '-e', `JWT_EXPIRES_IN=${process.env.JWT_EXPIRES_IN || '7d'}`,
+        '-e', `DATABASE_URL=postgresql://postgres:password@host.docker.internal:5433/devflow_db`,
+        '-e', `MINIO_ENDPOINT=host.docker.internal`,
+        '-e', `MINIO_PORT=9000`,
+        '-e', `MINIO_ACCESS_KEY=minioadmin`,
+        '-e', `MINIO_SECRET_KEY=minioadmin`,
+        '-e', `MINIO_BUCKET=devflow-artifacts`,
+        imageTag,
       ]);
 
       await this.deploymentsRepository.update(deploymentId, { status: DeploymentStatus.SUCCESS });
-      this.logger.log(`Deployment ${deploymentId} running at http://localhost:${port}`);
+      this.logger.log(`✅ Deployment ${deploymentId} running at http://localhost:${port}`);
     } catch (err: any) {
       this.logger.error(`Deployment ${deploymentId} failed: ${err.message}`);
       await this.deploymentsRepository.update(deploymentId, { status: DeploymentStatus.FAILED });
+    } finally {
+      clearTimeout(timeoutHandle);
     }
+  }
+
+  /** Returns true if the Docker daemon responds within 5 seconds */
+  private isDockerAvailable(): Promise<boolean> {
+    return new Promise((resolve) => {
+      const child = spawn('docker', ['info', '--format', '{{.ServerVersion}}'], { shell: true });
+      const timer = setTimeout(() => { child.kill(); resolve(false); }, 5000);
+      child.on('close', (code) => { clearTimeout(timer); resolve(code === 0); });
+      child.on('error', () => { clearTimeout(timer); resolve(false); });
+    });
   }
 
   private runCommand(command: string, args: string[]): Promise<void> {

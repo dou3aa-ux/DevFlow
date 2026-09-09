@@ -76,52 +76,92 @@ export class RepositoriesService {
 
   /**
    * Sync commits from the GitHub API into the local DB.
-   * Works without a public webhook — just calls the GitHub REST API directly.
-   * Uses the repo's stored accessToken if available, falls back to unauthenticated.
+   * Strategy 1: GitHub REST API (works for public repos, or private with accessToken)
+   * Strategy 2: git ls-remote fallback — gets the real HEAD SHA without cloning.
    */
   async syncCommitsFromGitHub(repositoryId: number): Promise<Commit[]> {
     const repo = await this.findOne(repositoryId);
 
-    // Parse owner/repo from URL, e.g. https://github.com/owner/repo or git@github.com:owner/repo.git
+    // ── Strategy 1: GitHub REST API ─────────────────────────────────────────
     const match = repo.url.match(/github\.com[/:]([^/]+\/[^/]+?)(?:\.git)?$/);
-    if (!match) {
-      this.logger.warn(`Cannot parse GitHub owner/repo from URL: ${repo.url}`);
-      return [];
-    }
-    const repoPath = match[1];
-    const apiUrl = `https://api.github.com/repos/${repoPath}/commits?per_page=20`;
+    if (match) {
+      const repoPath = match[1];
+      const apiUrl = `https://api.github.com/repos/${repoPath}/commits?per_page=20`;
+      const headers: Record<string, string> = {
+        Accept: 'application/vnd.github+json',
+        'User-Agent': 'DevFlow-App/1.0',
+        'X-GitHub-Api-Version': '2022-11-28',
+      };
+      if (repo.accessToken) headers['Authorization'] = `Bearer ${repo.accessToken}`;
 
-    const headers: Record<string, string> = {
-      Accept: 'application/vnd.github+json',
-      'X-GitHub-Api-Version': '2022-11-28',
-    };
-    if (repo.accessToken) {
-      headers['Authorization'] = `Bearer ${repo.accessToken}`;
-    }
+      try {
+        const res = await fetch(apiUrl, { headers });
+        const body = await res.json() as any;
+        this.logger.log(`GitHub API [${res.status}] for ${apiUrl}`);
 
-    let data: any[];
-    try {
-      const res = await fetch(apiUrl, { headers });
-      if (!res.ok) {
-        this.logger.warn(`GitHub API returned ${res.status} for ${apiUrl}`);
-        return [];
+        if (res.ok && Array.isArray(body) && body.length > 0) {
+          const saved: Commit[] = [];
+          for (const c of body) {
+            const sha: string = c.sha;
+            const message: string = c.commit?.message?.split('\n')[0] || '';
+            const author: string = c.commit?.author?.name || c.author?.login || 'unknown';
+            const committedAt = new Date(c.commit?.author?.date || Date.now());
+            const commit = await this.saveCommit(repositoryId, sha, message, author, committedAt);
+            saved.push(commit);
+          }
+          this.logger.log(`✅ Synced ${saved.length} commits via GitHub API for repo ${repositoryId}`);
+          return saved;
+        }
+
+        // Log what went wrong so it shows in backend console
+        if (!res.ok) {
+          this.logger.warn(`⚠️  GitHub API error ${res.status}: ${JSON.stringify(body)}`);
+        }
+      } catch (err: any) {
+        this.logger.error(`GitHub API fetch failed: ${err.message}`);
       }
-      data = await res.json() as any[];
-    } catch (err: any) {
-      this.logger.error(`Failed to fetch commits from GitHub: ${err.message}`);
-      return [];
     }
 
-    const saved: Commit[] = [];
-    for (const c of data) {
-      const sha: string = c.sha;
-      const message: string = c.commit?.message?.split('\n')[0] || '';
-      const author: string = c.commit?.author?.name || c.author?.login || 'unknown';
-      const committedAt = new Date(c.commit?.author?.date || Date.now());
-      const commit = await this.saveCommit(repositoryId, sha, message, author, committedAt);
-      saved.push(commit);
+    // ── Strategy 2: git ls-remote (no clone, just reads remote refs) ────────
+    this.logger.log(`🔁 Falling back to git ls-remote for ${repo.url}`);
+    try {
+      const sha = await this.getHeadShaViaLsRemote(repo.url, repo.accessToken);
+      if (sha) {
+        const commit = await this.saveCommit(
+          repositoryId,
+          sha,
+          'Latest commit (synced via ls-remote)',
+          'git',
+          new Date(),
+        );
+        this.logger.log(`✅ Synced HEAD commit via ls-remote: ${sha.slice(0, 7)}`);
+        return [commit];
+      }
+    } catch (err: any) {
+      this.logger.error(`git ls-remote failed: ${err.message}`);
     }
-    this.logger.log(`Synced ${saved.length} commits for repo ${repositoryId}`);
-    return saved;
+
+    this.logger.warn(`❌ Could not sync commits for repo ${repositoryId} — no method succeeded`);
+    return [];
+  }
+
+  /** Run "git ls-remote <url> HEAD" and return the SHA */
+  private getHeadShaViaLsRemote(repoUrl: string, accessToken?: string): Promise<string | null> {
+    return new Promise((resolve) => {
+      const { spawn } = require('child_process');
+      // Inject token into HTTPS URL if provided
+      let url = repoUrl;
+      if (accessToken && url.startsWith('https://')) {
+        url = url.replace('https://', `https://${accessToken}@`);
+      }
+      const child = spawn('git', ['ls-remote', url, 'HEAD'], { shell: true });
+      let output = '';
+      child.stdout.on('data', (d: Buffer) => (output += d.toString()));
+      child.on('close', () => {
+        const sha = output.trim().split(/\s+/)[0] || null;
+        resolve(sha && sha.length === 40 ? sha : null);
+      });
+      child.on('error', () => resolve(null));
+    });
   }
 }
