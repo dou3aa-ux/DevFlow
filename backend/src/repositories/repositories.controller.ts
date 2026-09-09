@@ -26,6 +26,11 @@ export class RepositoriesController {
     return this.repositoriesService.getCommits(+id);
   }
 
+  @Post(':id/sync-commits')
+  syncCommits(@Param('id') id: string) {
+    return this.repositoriesService.syncCommitsFromGitHub(+id);
+  }
+
   @Delete(':id')
   remove(@Param('id') id: string) {
   return this.repositoriesService.remove(+id);

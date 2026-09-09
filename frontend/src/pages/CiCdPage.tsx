@@ -103,6 +103,9 @@ export default function CiCdPage() {
       return;
     }
 
+    // Always sync the latest commits from GitHub API first, then read from DB
+    await devopsApi.syncCommits(r.id);
+
     const commits = await devopsApi.getCommits(r.id).catch(() => []);
     if (commits.length > 0) setLatestCommit(commits[0]);
 

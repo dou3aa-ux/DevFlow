@@ -44,6 +44,9 @@ export const devopsApi = {
   getCommits: (repositoryId: number) =>
     api.get<Commit[]>(`/repositories/${repositoryId}/commits`).then((res) => res.data),
 
+  syncCommits: (repositoryId: number) =>
+    api.post<Commit[]>(`/repositories/${repositoryId}/sync-commits`).then((res) => res.data).catch(() => [] as Commit[]),
+
   getBuilds: (repositoryId: number) =>
     api.get<Build[]>(`/builds?repositoryId=${repositoryId}`).then((res) => res.data),
 

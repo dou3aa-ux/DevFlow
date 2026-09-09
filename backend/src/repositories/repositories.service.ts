@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository as TypeOrmRepository } from 'typeorm';
 import { Repository } from './entities/repository.entity';
@@ -8,6 +8,8 @@ import { CreateRepositoryDto } from './dto/create-repository.dto';
 
 @Injectable()
 export class RepositoriesService {
+  private readonly logger = new Logger(RepositoriesService.name);
+
   constructor(
     @InjectRepository(Repository)
     private reposRepository: TypeOrmRepository<Repository>,
@@ -71,4 +73,55 @@ export class RepositoriesService {
   await this.reposRepository.delete(repo.id);
   return { message: 'Repository unlinked successfully' };
 }
+
+  /**
+   * Sync commits from the GitHub API into the local DB.
+   * Works without a public webhook — just calls the GitHub REST API directly.
+   * Uses the repo's stored accessToken if available, falls back to unauthenticated.
+   */
+  async syncCommitsFromGitHub(repositoryId: number): Promise<Commit[]> {
+    const repo = await this.findOne(repositoryId);
+
+    // Parse owner/repo from URL, e.g. https://github.com/owner/repo or git@github.com:owner/repo.git
+    const match = repo.url.match(/github\.com[/:]([^/]+\/[^/]+?)(?:\.git)?$/);
+    if (!match) {
+      this.logger.warn(`Cannot parse GitHub owner/repo from URL: ${repo.url}`);
+      return [];
+    }
+    const repoPath = match[1];
+    const apiUrl = `https://api.github.com/repos/${repoPath}/commits?per_page=20`;
+
+    const headers: Record<string, string> = {
+      Accept: 'application/vnd.github+json',
+      'X-GitHub-Api-Version': '2022-11-28',
+    };
+    if (repo.accessToken) {
+      headers['Authorization'] = `Bearer ${repo.accessToken}`;
+    }
+
+    let data: any[];
+    try {
+      const res = await fetch(apiUrl, { headers });
+      if (!res.ok) {
+        this.logger.warn(`GitHub API returned ${res.status} for ${apiUrl}`);
+        return [];
+      }
+      data = await res.json() as any[];
+    } catch (err: any) {
+      this.logger.error(`Failed to fetch commits from GitHub: ${err.message}`);
+      return [];
+    }
+
+    const saved: Commit[] = [];
+    for (const c of data) {
+      const sha: string = c.sha;
+      const message: string = c.commit?.message?.split('\n')[0] || '';
+      const author: string = c.commit?.author?.name || c.author?.login || 'unknown';
+      const committedAt = new Date(c.commit?.author?.date || Date.now());
+      const commit = await this.saveCommit(repositoryId, sha, message, author, committedAt);
+      saved.push(commit);
+    }
+    this.logger.log(`Synced ${saved.length} commits for repo ${repositoryId}`);
+    return saved;
+  }
 }
