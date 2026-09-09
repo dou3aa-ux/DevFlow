@@ -130,11 +130,10 @@ export default function CiCdPage() {
   }, [build, projectId, loadRepoData]);
 
   const handleRunPipeline = async () => {
-    if (!repo) return;
+    if (!repo || !latestCommit) return;
     setTriggering(true);
-    const sha = latestCommit?.sha || 'a1b2c3d';
     try {
-      const newBuild = await devopsApi.triggerBuild(repo.id, sha);
+      const newBuild = await devopsApi.triggerBuild(repo.id, latestCommit.sha);
       setBuild(newBuild);
       setDeployment(null);
       if (projectId) loadRepoData(projectId);
@@ -187,13 +186,21 @@ export default function CiCdPage() {
 
             <div className="flex items-center gap-3">
               {repo && (
-                <button
-                  onClick={handleRunPipeline}
-                  disabled={triggering}
-                  className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700 disabled:opacity-40 disabled:cursor-not-allowed text-white px-5 py-2.5 rounded-lg text-xs font-medium transition shadow-lg shadow-purple-600/20"
-                >
-                  <Play size={14} /> {triggering ? 'Starting Pipeline...' : 'Trigger Pipeline'}
-                </button>
+                <div className="flex flex-col items-end gap-1">
+                  <button
+                    onClick={handleRunPipeline}
+                    disabled={triggering || !latestCommit}
+                    title={!latestCommit ? 'No commits found. Push a commit or wait for the webhook to register one.' : ''}
+                    className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700 disabled:opacity-40 disabled:cursor-not-allowed text-white px-5 py-2.5 rounded-lg text-xs font-medium transition shadow-lg shadow-purple-600/20"
+                  >
+                    <Play size={14} /> {triggering ? 'Starting Pipeline...' : 'Trigger Pipeline'}
+                  </button>
+                  {!latestCommit && (
+                    <span className="text-[10px] text-amber-400/80 font-mono">
+                      No commits detected — push to your repo or configure the webhook
+                    </span>
+                  )}
+                </div>
               )}
             </div>
           </div>

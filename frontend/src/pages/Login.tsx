@@ -2,57 +2,15 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getHomeForRole } from '../lib/roleHome';
-import { Lock, Mail, ArrowRight, Shield, Code2, Users, Bug, ClipboardCheck } from 'lucide-react';
+import { Lock, Mail, ArrowRight } from 'lucide-react';
 
-const DEMO_ACCOUNTS = [
-  {
-    role: 'ADMINISTRATOR',
-    label: 'Administrator',
-    icon: Shield,
-    color: 'border-rose-500/30 text-rose-400 hover:bg-rose-500/10',
-    email: 'admin@devflow.io',
-    username: 'System Admin',
-  },
-  {
-    role: 'PROJECT_MANAGER',
-    label: 'Project Manager',
-    icon: Users,
-    color: 'border-purple-500/30 text-purple-400 hover:bg-purple-500/10',
-    email: 'pm@devflow.io',
-    username: 'Sarah Chen (PM)',
-  },
-  {
-    role: 'DEVELOPER',
-    label: 'Developer',
-    icon: Code2,
-    color: 'border-blue-500/30 text-blue-400 hover:bg-blue-500/10',
-    email: 'dev@devflow.io',
-    username: 'Alex Rivera (Dev)',
-  },
-  {
-    role: 'QA_TESTER',
-    label: 'QA Tester',
-    icon: Bug,
-    color: 'border-orange-500/30 text-orange-400 hover:bg-orange-500/10',
-    email: 'tester@devflow.io',
-    username: 'Elena Rostova (QA)',
-  },
-  {
-    role: 'STAKEHOLDER',
-    label: 'Stakeholder',
-    icon: ClipboardCheck,
-    color: 'border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10',
-    email: 'stakeholder@devflow.io',
-    username: 'David Miller (Stakeholder)',
-  },
-];
 
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
-  const { login, loginAsDemoUser } = useAuth();
+  const { login } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -69,31 +27,6 @@ export default function Login() {
     }
   };
 
-  const handleDemoLogin = async (account: (typeof DEMO_ACCOUNTS)[0]) => {
-    if (account.role === 'ADMINISTRATOR') {
-      try {
-        setSubmitting(true);
-        const res = await login(account.email, 'admin123');
-        navigate(getHomeForRole(res.user.role));
-        return;
-      } catch (err: any) {
-        setEmail(account.email);
-        setPassword('admin123');
-        setError(err?.response?.data?.message || 'Admin login failed');
-        return;
-      } finally {
-        setSubmitting(false);
-      }
-    }
-
-    loginAsDemoUser({
-      id: Math.floor(Math.random() * 100) + 1,
-      username: account.username,
-      email: account.email,
-      role: account.role,
-    });
-    navigate(getHomeForRole(account.role));
-  };
 
   return (
     <div className="min-h-screen bg-[#050508] relative flex items-center justify-center p-6 overflow-hidden">
@@ -158,36 +91,6 @@ export default function Login() {
               {submitting ? 'Authenticating...' : 'Sign In'} <ArrowRight size={16} />
             </button>
           </form>
-
-          {/* Quick Demo Access */}
-          <div className="pt-4 border-t border-white/5 space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                Instant Demo Personas
-              </span>
-              <span className="text-[10px] text-purple-400 font-mono">1-Click Login</span>
-            </div>
-
-            <div className="grid grid-cols-1 gap-2">
-              {DEMO_ACCOUNTS.map((acc) => {
-                const Icon = acc.icon;
-                return (
-                  <button
-                    key={acc.role}
-                    type="button"
-                    onClick={() => handleDemoLogin(acc)}
-                    className={`flex items-center justify-between px-3.5 py-2 rounded-xl text-xs font-medium border transition ${acc.color} bg-white/[0.02]`}
-                  >
-                    <div className="flex items-center gap-2.5">
-                      <Icon size={15} />
-                      <span>{acc.label}</span>
-                    </div>
-                    <span className="text-[10px] opacity-70 font-mono">{acc.email}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
         </div>
 
         <p className="text-center text-xs text-slate-600">
